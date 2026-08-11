@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+MODEL = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
 chroma_client = chromadb.PersistentClient(path="./data/chroma")
 collection = chroma_client.get_or_create_collection(name="papers")
 
@@ -50,7 +51,7 @@ def search_and_answer(question: str, n_results: int = 3):
     titles = [m["title"] for m in results["metadatas"][0]]
 
     message = client.messages.create(
-        model="claude-sonnet-4-20250514",
+        model=MODEL,
         max_tokens=1024,
         messages=[{
             "role": "user",
