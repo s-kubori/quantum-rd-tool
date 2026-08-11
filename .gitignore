@@ -1,0 +1,26 @@
+# 認証情報
+.env
+.env.*
+!.env.example
+
+# 仮想環境
+venv/
+.venv/
+
+# Python キャッシュ
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# 生成データ（実行時に作られるもの）
+data/chroma/
+data/*.db
+
+# 作業残骸
+pip_error.txt
+
+# OS / エディタ
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

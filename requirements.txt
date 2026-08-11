@@ -1,0 +1,11 @@
+streamlit
+chromadb
+arxiv
+anthropic
+sentence-transformers
+qiskit
+qiskit-aer
+qiskit-nature
+pandas
+matplotlib
+python-dotenv
