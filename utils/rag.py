@@ -49,7 +49,7 @@ def search_and_answer(question: str, n_results: int = 3):
     )
 
     if not results["documents"][0]:
-        return "関連する論文が見つかりませんでした。先に論文を取得してください。"
+        return "No relevant papers found. Fetch some papers first."
 
     context = "\n\n".join(results["documents"][0])
     titles = [m["title"] for m in results["metadatas"][0]]
@@ -59,14 +59,13 @@ def search_and_answer(question: str, n_results: int = 3):
         max_tokens=1024,
         messages=[{
             "role": "user",
-            "content": f"""以下の論文の情報をもとに質問に答えてください。
+            "content": f"""Answer the question based on the following papers.
 
-論文情報:
+Papers:
 {context}
 
-質問: {question}
-
-日本語で回答してください。"""
+Question: {question}
+"""
         }]
     )
 
