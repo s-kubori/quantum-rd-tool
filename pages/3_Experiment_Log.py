@@ -2,31 +2,31 @@ import streamlit as st
 import pandas as pd
 from utils.db import get_experiments
 
-st.title("📊 実験ログ")
-st.caption("過去の実験結果を一覧で確認できます")
+st.title("📊 Experiment Log")
+st.caption("Lists past experiment results")
 
 st.divider()
 
-# 実験ログ取得
+# Get experiment logs
 experiments = get_experiments()
 
 if not experiments:
-    st.warning("まだ実験データがありません。量子計算ページでVQEを実行してください。")
+    st.warning("No experiments yet. Run a VQE computation on the Quantum Computation page.")
 else:
-    st.subheader(f"実験数：{len(experiments)} 件")
+    st.subheader(f"{len(experiments)} experiments")
 
-    # テーブル表示用に整形
+    # Formatting for table display
     rows = []
     for exp in experiments:
         result = exp["result"] or {}
         rows.append({
             "ID": exp["id"],
-            "実験名": exp["name"],
-            "アルゴリズム": exp["algorithm"],
-            "エネルギー (Ha)": result.get("energy", "-"),
-            "最適化回数": result.get("iterations", "-"),
-            "収束": "✅" if result.get("converged") else "⚠️",
-            "実行日時": exp["created_at"][:19].replace("T", " ")
+            "Name": exp["name"],
+            "Algorithm": exp["algorithm"],
+            "Energy (Ha)": result.get("energy", "-"),
+            "Iterations": result.get("iterations", "-"),
+            "Converged": "✅" if result.get("converged") else "⚠️",
+            "Run at": exp["created_at"][:19].replace("T", " ")
         })
 
     df = pd.DataFrame(rows)
@@ -34,18 +34,18 @@ else:
 
     st.divider()
 
-    # 詳細表示
-    st.subheader("実験の詳細")
-    exp_ids = [f"ID {e['id']}：{e['name']}" for e in experiments]
-    selected = st.selectbox("実験を選択", exp_ids)
+    # Details display
+    st.subheader("Details")
+    exp_ids = [f"ID {e['id']}: {e['name']}" for e in experiments]
+    selected = st.selectbox("Select an experiment", exp_ids)
 
-    selected_id = int(selected.split("：")[0].replace("ID ", ""))
+    selected_id = int(selected.split(":")[0].replace("ID ", ""))
     selected_exp = next(e for e in experiments if e["id"] == selected_id)
 
     col1, col2 = st.columns(2)
     with col1:
-        st.write("**パラメータ**")
+        st.write("**Parameters**")
         st.json(selected_exp["parameters"])
     with col2:
-        st.write("**結果**")
+        st.write("**Result**")
         st.json(selected_exp["result"])
