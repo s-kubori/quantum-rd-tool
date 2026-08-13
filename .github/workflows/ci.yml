@@ -61,7 +61,7 @@ jobs:
 
       - name: Start container
         run: |
-          docker run -d --name qrd -p 8501:8501 \
+          docker run -d --name qrd -p 18501:8501 \
             -e ANTHROPIC_API_KEY=dummy-key-for-smoke-test \
             -e STREAMLIT_SERVER_HEADLESS=true \
             -e STREAMLIT_BROWSER_GATHER_USAGE_STATS=false \
