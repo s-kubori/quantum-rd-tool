@@ -23,8 +23,8 @@ else:
             "ID": exp["id"],
             "Name": exp["name"],
             "Algorithm": exp["algorithm"],
-            "Energy (Ha)": result.get("energy", "-"),
-            "Iterations": result.get("iterations", "-"),
+            "Energy (Ha)": result.get("energy"),
+            "Iterations": result.get("iterations"),
             "Converged": "✅" if result.get("converged") else "⚠️",
             "Run at": exp["created_at"][:19].replace("T", " ")
         })
