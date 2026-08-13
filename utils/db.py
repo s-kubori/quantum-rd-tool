@@ -1,12 +1,15 @@
 import sqlite3
 import json
 from datetime import datetime
+from pathlib import Path
 
-DB_PATH = "./data/experiments.db"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DB_PATH = PROJECT_ROOT / "data" / "experiments.db"
 
 
 def init_db():
     """DBとテーブルを初期化する"""
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("""

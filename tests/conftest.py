@@ -10,6 +10,6 @@ def temp_db(tmp_path, monkeypatch):
     Returns the path so tests can inspect the database directly if needed.
     """
     path = tmp_path / "test_experiments.db"
-    monkeypatch.setattr(db, "DB_PATH", str(path))
+    monkeypatch.setattr(db, "DB_PATH", path)
     db.init_db()
     return path
