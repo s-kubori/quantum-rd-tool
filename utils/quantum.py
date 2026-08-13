@@ -1,6 +1,6 @@
 import numpy as np
 from qiskit import QuantumCircuit
-from qiskit.circuit.library import TwoLocal
+from qiskit.circuit.library import n_local
 from qiskit.quantum_info import SparsePauliOp
 from qiskit_aer import AerSimulator
 from qiskit.primitives import StatevectorEstimator
@@ -19,7 +19,7 @@ H2_HAMILTONIAN = SparsePauliOp.from_list([
 
 def build_ansatz(num_qubits: int = 2, reps: int = 1):
     """VQE用の変分量子回路（ansatz）を構築する"""
-    ansatz = TwoLocal(
+    ansatz = n_local(
         num_qubits,
         rotation_blocks=["ry", "rz"],
         entanglement_blocks="cx",
