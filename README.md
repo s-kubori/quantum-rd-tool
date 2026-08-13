@@ -53,21 +53,21 @@ run.
 
 ```mermaid
 flowchart TD
-    UI[Streamlit UI<br/>app.py + pages/]
+    UI["Streamlit UI<br/>app.py + pages/"]
 
-    UI --> RAG[utils/rag.py]
-    UI --> QC[utils/quantum.py]
-    UI --> DB[utils/db.py]
+    UI --> RAG["utils/rag.py"]
+    UI --> QC["utils/quantum.py"]
+    UI --> DB["utils/db.py"]
 
-    RAG --> ARXIV[arXiv API]
-    RAG --> CHROMA[(ChromaDB<br/>data/chroma)]
-    RAG --> CLAUDE[Anthropic API]
+    RAG --> ARXIV["arXiv API"]
+    RAG --> CHROMA[("ChromaDB<br/>data/chroma")]
+    RAG --> CLAUDE["Anthropic API"]
 
-    QC --> QISKIT[Qiskit primitives<br/>StatevectorEstimator]
-    QC --> SCIPY[scipy.optimize<br/>COBYLA]
+    QC --> QISKIT["Qiskit primitives<br/>StatevectorEstimator"]
+    QC --> SCIPY["scipy.optimize<br/>COBYLA"]
     QC --> DB
 
-    DB --> SQLITE[(SQLite<br/>data/experiments.db)]
+    DB --> SQLITE[("SQLite<br/>data/experiments.db")]
 ```
 
 The three `utils` modules are independent of Streamlit and hold all the logic;
