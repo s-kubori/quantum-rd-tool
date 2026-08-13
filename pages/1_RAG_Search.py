@@ -11,7 +11,7 @@ st.subheader("1. Fetch papers")
 query = st.text_input("Search keywords", value="quantum computing")
 max_results = st.slider("Number of papers", min_value=1, max_value=10, value=5)
 
-if st.button("Fetch papers", use_container_width=True):
+if st.button("Fetch papers", width='stretch'):
     with st.spinner("Fetching from arXiv..."):
         papers = fetch_and_store_papers(query, max_results)
     st.success(f"Fetched {len(papers)} papers.")
@@ -24,7 +24,7 @@ st.divider()
 st.subheader("2. Ask a question")
 question = st.text_input("Question", value="What is quantum computing?")
 
-if st.button("Ask Claude", use_container_width=True):
+if st.button("Ask Claude", width='stretch'):
     with st.spinner("Waiting for Claude..."):
         result = search_and_answer(question)
 

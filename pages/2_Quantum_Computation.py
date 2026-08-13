@@ -25,7 +25,7 @@ st.divider()
 # Run VQE
 st.subheader("2. Run VQE")
 
-if st.button("Run VQE", use_container_width=True):
+if st.button("Run VQE", width='stretch'):
     with st.spinner("Running the computation (30s to 1 min)..."):
         result = run_vqe(
             shots=shots,
