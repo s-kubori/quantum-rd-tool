@@ -3,12 +3,16 @@ import arxiv
 import chromadb
 from anthropic import Anthropic
 from dotenv import load_dotenv
+from pathlib import Path
 
 load_dotenv()
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+CHROMA_PATH = PROJECT_ROOT / "data" / "chroma"
+
 client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 MODEL = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
-chroma_client = chromadb.PersistentClient(path="./data/chroma")
+chroma_client = chromadb.PersistentClient(path=str(CHROMA_PATH))
 collection = chroma_client.get_or_create_collection(name="papers")
 
 
