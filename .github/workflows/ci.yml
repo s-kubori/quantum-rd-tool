@@ -5,9 +5,15 @@ on:
     branches: [main]
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   test:
+    name: pytest
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Check out the repository
@@ -27,3 +33,63 @@ jobs:
 
       - name: Run tests
         run: pytest -v
+
+  docker:
+    name: docker build & smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: quantum-rd-tool:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Report image size
+        run: docker image ls quantum-rd-tool:ci
+
+      - name: Start container
+        run: |
+          docker run -d --name qrd -p 8501:8501 \
+            -e ANTHROPIC_API_KEY=dummy-key-for-smoke-test \
+            -e STREAMLIT_SERVER_HEADLESS=true \
+            -e STREAMLIT_BROWSER_GATHER_USAGE_STATS=false \
+            quantum-rd-tool:ci
+
+      - name: Smoke test the health endpoint
+        run: |
+          # 2秒間隔で最大30回 = 最大60秒待つ
+          for i in $(seq 1 30); do
+            # コンテナが既に終了していれば待つ意味がないので即失敗させる
+            if ! docker ps --filter name=qrd --filter status=running -q | grep -q .; then
+              echo "::error::container exited before becoming healthy"
+              exit 1
+            fi
+            # -f でHTTPエラーを検出し、grep で本文が ok であることまで確認する
+            if curl -fsS http://localhost:8501/_stcore/health | grep -q ok; then
+              echo "healthy after $((i * 2))s"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::health check did not pass within 60s"
+          exit 1
+
+      - name: Dump container logs on failure
+        if: failure()
+        run: docker logs qrd || echo "container was never started"
+
+      - name: Clean up the container
+        if: always()
+        run: docker rm -f qrd || true
