@@ -10,3 +10,4 @@ scipy==1.17.1
 pandas==3.0.2
 matplotlib==3.10.8
 python-dotenv==1.2.2
+prometheus-client==0.21.1
