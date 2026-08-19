@@ -1,4 +1,5 @@
 import numpy as np
+import time
 from qiskit import QuantumCircuit
 from qiskit.circuit.library import n_local
 from qiskit.quantum_info import SparsePauliOp
@@ -6,6 +7,7 @@ from qiskit_aer import AerSimulator
 from qiskit.primitives import StatevectorEstimator
 from scipy.optimize import minimize
 from utils.db import init_db, save_experiment
+from utils.metrics import VQE_DURATION, VQE_ENERGY, VQE_ITERATIONS, VQE_RUNS
 
 # 水素分子 H2 のハミルトニアン（簡略版）
 H2_HAMILTONIAN = SparsePauliOp.from_list([
@@ -30,49 +32,60 @@ def build_ansatz(num_qubits: int = 2, reps: int = 1):
 
 def run_vqe(shots: int = 1000, reps: int = 1, experiment_name: str = "H2 VQE"):
     """VQEを実行して基底状態エネルギーを計算する"""
-    ansatz = build_ansatz(reps=reps)
-    estimator = StatevectorEstimator()
-    num_params = ansatz.num_parameters
+    started = time.perf_counter()
 
-    # エネルギー期待値を計算する関数
-    eval_count = [0]
-    energy_history = []
+    try:
+        ansatz = build_ansatz(reps=reps)
+        estimator = StatevectorEstimator()
+        num_params = ansatz.num_parameters
 
-    def cost_function(params):
-        bound = ansatz.assign_parameters(params)
-        job = estimator.run([(bound, H2_HAMILTONIAN)])
-        result = job.result()
-        energy = result[0].data.evs.item()
-        eval_count[0] += 1
-        energy_history.append(energy)
-        return energy
+        # エネルギー期待値を計算する関数
+        eval_count = [0]
+        energy_history = []
 
-    # 初期パラメータをランダムに設定
-    initial_params = np.random.uniform(-np.pi, np.pi, num_params)
+        def cost_function(params):
+            bound = ansatz.assign_parameters(params)
+            job = estimator.run([(bound, H2_HAMILTONIAN)])
+            result = job.result()
+            energy = result[0].data.evs.item()
+            eval_count[0] += 1
+            energy_history.append(energy)
+            return energy
 
-    # 古典最適化（COBYLA）
-    result = minimize(
-        cost_function,
-        initial_params,
-        method="COBYLA",
-        options={"maxiter": 200}
-    )
+        # 初期パラメータをランダムに設定
+        initial_params = np.random.uniform(-np.pi, np.pi, num_params)
 
-    # 結果をまとめる
-    outcome = {
-        "energy": round(result.fun, 6),
-        "iterations": eval_count[0],
-        "converged": result.success,
-        "energy_history": energy_history[:10]  # 最初の10件だけ保存
-    }
+        # 古典最適化（COBYLA）
+        result = minimize(
+            cost_function,
+            initial_params,
+            method="COBYLA",
+            options={"maxiter": 200}
+        )
 
-    # DBに保存
-    init_db()
-    save_experiment(
-        name=experiment_name,
-        algorithm="VQE",
-        parameters={"shots": shots, "reps": reps, "num_params": num_params},
-        result=outcome
-    )
+        # 結果をまとめる
+        outcome = {
+            "energy": round(result.fun, 6),
+            "iterations": eval_count[0],
+            "converged": result.success,
+            "energy_history": energy_history[:10]  # 最初の10件だけ保存
+        }
 
-    return outcome
+        # DBに保存
+        init_db()
+        save_experiment(
+            name=experiment_name,
+            algorithm="VQE",
+            parameters={"shots": shots, "reps": reps, "num_params": num_params},
+            result=outcome
+        )
+    except Exception:
+        VQE_RUNS.labels(status="error").inc()
+        raise
+    else:
+        VQE_RUNS.labels(status="success").inc()
+        VQE_ITERATIONS.observe(outcome["iterations"])
+        VQE_ENERGY.set(outcome["energy"])
+        return outcome
+    finally:
+        VQE_DURATION.observe(time.perf_counter() - started)

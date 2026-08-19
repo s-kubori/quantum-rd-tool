@@ -1,9 +1,11 @@
 import os
+import time
 import arxiv
 import chromadb
 from anthropic import Anthropic
 from dotenv import load_dotenv
 from pathlib import Path
+from utils.metrics import RAG_COLLECTION_SIZE, RAG_PAPERS_INDEXED, RAG_QUERIES, RAG_QUERY_DURATION
 
 load_dotenv()
 
@@ -14,6 +16,10 @@ client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 MODEL = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
 chroma_client = chromadb.PersistentClient(path=str(CHROMA_PATH))
 collection = chroma_client.get_or_create_collection(name="papers")
+arxiv_client = arxiv.Client()
+
+# 起動時点の蓄積件数を Gauge の初期値にする
+RAG_COLLECTION_SIZE.set(collection.count())
 
 
 def fetch_and_store_papers(query: str, max_results: int = 5):
@@ -25,7 +31,7 @@ def fetch_and_store_papers(query: str, max_results: int = 5):
     )
 
     stored = []
-    for paper in search.results():
+    for paper in arxiv_client.results(search):
         doc_id = paper.entry_id.split("/")[-1]
         collection.upsert(
             ids=[doc_id],
@@ -38,38 +44,52 @@ def fetch_and_store_papers(query: str, max_results: int = 5):
         )
         stored.append(paper.title)
 
+    RAG_PAPERS_INDEXED.inc(len(stored))
+    RAG_COLLECTION_SIZE.set(collection.count())
+
     return stored
 
 
 def search_and_answer(question: str, n_results: int = 3):
     """質問に関連する論文を検索してClaudeに回答させる"""
-    results = collection.query(
-        query_texts=[question],
-        n_results=n_results
-    )
+    started = time.perf_counter()
 
-    if not results["documents"][0]:
-        return "No relevant papers found. Fetch some papers first."
+    try:
+        results = collection.query(
+            query_texts=[question],
+            n_results=n_results
+        )
 
-    context = "\n\n".join(results["documents"][0])
-    titles = [m["title"] for m in results["metadatas"][0]]
+        if not results["documents"][0]:
+            RAG_QUERIES.labels(status="empty").inc()
+            return "No relevant papers found. Fetch some papers first."
 
-    message = client.messages.create(
-        model=MODEL,
-        max_tokens=1024,
-        messages=[{
-            "role": "user",
-            "content": f"""Answer the question based on the following papers.
+        context = "\n\n".join(results["documents"][0])
+        titles = [m["title"] for m in results["metadatas"][0]]
+
+        message = client.messages.create(
+            model=MODEL,
+            max_tokens=1024,
+            messages=[{
+                "role": "user",
+                "content": f"""Answer the question based on the following papers.
 
 Papers:
 {context}
 
 Question: {question}
 """
-        }]
-    )
+            }]
+        )
 
-    return {
-        "answer": message.content[0].text,
-        "sources": titles
-    }
+        outcome = {
+            "answer": message.content[0].text,
+            "sources": titles
+        }
+    except Exception:
+        RAG_QUERIES.labels(status="error").inc()
+        raise
+    else:
+        RAG_QUERIES.labels(status="success").inc()
+        RAG_QUERY_DURATION.observe(time.perf_counter() - started)
+        return outcome
