@@ -1,4 +1,5 @@
 import streamlit as st
+import utils.metrics # noqa: F401  starts the exporter at startup
 
 st.set_page_config(
     page_title="Quantum R&D Tool",
