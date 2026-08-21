@@ -27,7 +27,7 @@ VQE_RUNS = Counter(
 VQE_DURATION = Histogram(
     "vqe_duration_seconds",
     "Wall-clock time of a VQE run",
-    buckets=(1, 2, 5, 10, 20, 30, 60, 120),
+    buckets=(0.25, 0.5, 1, 2, 5, 10, 30, 60),
 )
 
 VQE_ITERATIONS = Histogram(
@@ -40,6 +40,11 @@ VQE_ENERGY = Gauge(
     "vqe_energy_hartree",
     "Ground state energy from the most recent VQE run",
 )
+
+# Zero is a meaningful reading for a count but not for an energy, so start
+# undefined; Prometheus treats NaN as absent and draws no line until a run
+# has actually produced a value.
+VQE_ENERGY.set(float("nan"))
 
 # --- RAG ---
 
