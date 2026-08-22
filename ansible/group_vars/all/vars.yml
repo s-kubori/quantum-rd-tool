@@ -1,0 +1,13 @@
+---
+deploy_dir: /opt/quantum-rd-tool
+image_tag: latest
+image_repo: ghcr.io/s-kubori/quantum-rd-tool
+
+# Left empty by default. The VQE page works without a key; the RAG page
+# needs one. Supply it at run time:
+#   ansible-playbook site.yml -e anthropic_api_key=sk-ant-...
+# or export ANTHROPIC_API_KEY before running.
+anthropic_api_key: "{{ lookup('env', 'ANTHROPIC_API_KEY') | default('', true) }}"
+
+anthropic_model: claude-sonnet-4-6
+grafana_admin_password: admin
